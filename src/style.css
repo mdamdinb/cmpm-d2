@@ -5,6 +5,7 @@
 }
 
 #myCanvas {
-  border: 1px solid black;
-  filter: drop-shadow(5px 5px 5px gray);
+  fill: solid white;
+  border: 2px solid black;
+  filter: drop-shadow(7px 7px 7px gray);
 }

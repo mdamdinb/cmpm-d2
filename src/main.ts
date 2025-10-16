@@ -6,7 +6,6 @@ document.body.innerHTML = `
   <button id = "clrButton">clear</button>
   
 `;
-`cgetElementById("myCanvas");
 
 const myCanvas = document.getElementById("myCanvas") as HTMLCanvasElement;
 const ctx = myCanvas.getContext("2d")!;
@@ -43,7 +42,7 @@ function drawLine(
   x1: number,
   y1: number,
   x2: number,
-  y2: number
+  y2: number,
 ) {
   ctx.beginPath();
   ctx.strokeStyle = "black";
