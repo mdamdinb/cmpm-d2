@@ -1,5 +1,10 @@
 .icon {
   width: 64px;
   vertical-align: top;
-  border: 1px solid salmon;
+  border: 1px solid salmo;
+}
+
+#myCanvas {
+  border: 1px solid black;
+  filter: drop-shadow(5px 5px 5px gray);
 }
