@@ -55,20 +55,20 @@ myCanvas.addEventListener("drawing-changed", () => {
 
 function redrawCanvas() {
   ctx.clearRect(0, 0, myCanvas.width, myCanvas.height);
-  
   ctx.strokeStyle = "black";
   ctx.lineWidth = 1;
-  
+
   for (const stroke of strokes) {
-    if (stroke.length < 2) continue;
-    
-    ctx.beginPath();
-    ctx.moveTo(stroke[0].x, stroke[0].y);
-    
-    for (let i = 1; i < stroke.length; i++) {
-      ctx.lineTo(stroke[i].x, stroke[i].y);
+    if (stroke.length > 1) {
+      ctx.beginPath();
+      const { x, y } = stroke[0]!;
+      ctx.moveTo(x, y);
+
+      for (const point of stroke) {
+        ctx.lineTo(point.x, point.y);
+      }
+
+      ctx.stroke();
     }
-    
-    ctx.stroke();
   }
 }
