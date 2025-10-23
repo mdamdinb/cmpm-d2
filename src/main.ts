@@ -15,53 +15,77 @@ const clrButton = document.getElementById("clrButton") as HTMLButtonElement;
 const undoButton = document.getElementById("undoButton") as HTMLButtonElement;
 const redoButton = document.getElementById("redoButton") as HTMLButtonElement;
 
-interface Point {
-  x: number;
-  y: number;
+interface Command {
+  execute(ctx: CanvasRenderingContext2D): void;
 }
 
-type Stroke = Point[];
-const strokes: Stroke[] = [];
-const redoStack: Stroke[] = [];
-let currentStroke: Stroke | null = null;
+interface DrawableCommand extends Command {
+  drag(x: number, y: number): void;
+}
+
+class MarkerLine implements DrawableCommand {
+  private points: { x: number; y: number }[];
+
+  constructor(x: number, y: number) {
+    this.points = [{ x, y }];
+  }
+
+  drag(x: number, y: number): void {
+    this.points.push({ x, y });
+  }
+
+  execute(ctx: CanvasRenderingContext2D): void {
+    if (this.points.length > 1) {
+      ctx.beginPath();
+      const { x, y } = this.points[0]!;
+      ctx.moveTo(x, y);
+      for (const point of this.points) {
+        ctx.lineTo(point.x, point.y);
+      }
+      ctx.stroke();
+    }
+  }
+}
+
+const commands: Command[] = [];
+const redoStack: Command[] = [];
+let currentCommand: DrawableCommand | null = null;
 
 clrButton.addEventListener("click", () => {
-  strokes.splice(0, strokes.length);
+  commands.splice(0, commands.length);
   dispatchDrawingChanged();
 });
 
 undoButton.addEventListener("click", () => {
-  if (strokes.length > 0) {
-    redoStack.push(strokes.pop()!);
+  if (commands.length > 0) {
+    redoStack.push(commands.pop()!);
     dispatchDrawingChanged();
   }
 });
 
 redoButton.addEventListener("click", () => {
   if (redoStack.length > 0) {
-    strokes.push(redoStack.pop()!);
+    commands.push(redoStack.pop()!);
     dispatchDrawingChanged();
   }
 });
 
 myCanvas.addEventListener("mousedown", (e) => {
-  currentStroke = [];
-  strokes.push(currentStroke);
+  currentCommand = new MarkerLine(e.offsetX, e.offsetY);
+  commands.push(currentCommand);
   redoStack.splice(0, redoStack.length); //clear redo stack on new stroke
-  currentStroke.push({ x: e.offsetX, y: e.offsetY });
-
   dispatchDrawingChanged();
 });
 
 myCanvas.addEventListener("mousemove", (e) => {
-  if (currentStroke) {
-    currentStroke.push({ x: e.offsetX, y: e.offsetY }); //stores point
+  if (currentCommand) {
+    currentCommand.drag(e.offsetX, e.offsetY);
     dispatchDrawingChanged();
   }
 });
 
 myCanvas.addEventListener("mouseup", () => {
-  currentStroke = null;
+  currentCommand = null;
 });
 
 // Custom event dispatch
@@ -80,17 +104,7 @@ function redrawCanvas() {
   ctx.strokeStyle = "black";
   ctx.lineWidth = 1;
 
-  for (const stroke of strokes) {
-    if (stroke.length > 1) {
-      ctx.beginPath();
-      const { x, y } = stroke[0]!;
-      ctx.moveTo(x, y);
-
-      for (const point of stroke) {
-        ctx.lineTo(point.x, point.y);
-      }
-
-      ctx.stroke();
-    }
+  for (const command of commands) {
+    command.execute(ctx);
   }
 }
