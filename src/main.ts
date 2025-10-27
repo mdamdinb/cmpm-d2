@@ -3,14 +3,21 @@ import "./style.css";
 document.body.innerHTML = `
   <h1>D2 Assignment</h1>
   <canvas id="myCanvas" width="256" height="256"></canvas>
-  <button id = "clrButton">clear</button>
-  <button id="undoButton">undo</button>
-  <button id="redoButton">redo</button>
-  
+  <div>
+    <button id="thinButton" class="selectedTool">Thin Marker</button>
+    <button id="thickButton">Thick Marker</button>
+  </div>
+  <div>
+    <button id = "clrButton">clear</button>
+    <button id="undoButton">undo</button>
+    <button id="redoButton">redo</button>
+  </div>
 `;
 
 const myCanvas = document.getElementById("myCanvas") as HTMLCanvasElement;
 const ctx = myCanvas.getContext("2d")!;
+const thinButton = document.getElementById("thinButton") as HTMLButtonElement;
+const thickButton = document.getElementById("thickButton") as HTMLButtonElement;
 const clrButton = document.getElementById("clrButton") as HTMLButtonElement;
 const undoButton = document.getElementById("undoButton") as HTMLButtonElement;
 const redoButton = document.getElementById("redoButton") as HTMLButtonElement;
@@ -25,9 +32,11 @@ interface DrawableCommand extends Command {
 
 class MarkerLine implements DrawableCommand {
   private points: { x: number; y: number }[];
+  private thickness: number;
 
-  constructor(x: number, y: number) {
+  constructor(x: number, y: number, thickness: number) {
     this.points = [{ x, y }];
+    this.thickness = thickness;
   }
 
   drag(x: number, y: number): void {
@@ -36,6 +45,7 @@ class MarkerLine implements DrawableCommand {
 
   execute(ctx: CanvasRenderingContext2D): void {
     if (this.points.length > 1) {
+      ctx.lineWidth = this.thickness;
       ctx.beginPath();
       const { x, y } = this.points[0]!;
       ctx.moveTo(x, y);
@@ -50,6 +60,20 @@ class MarkerLine implements DrawableCommand {
 const commands: Command[] = [];
 const redoStack: Command[] = [];
 let currentCommand: DrawableCommand | null = null;
+
+let selectedThickness = 2;
+
+thinButton.addEventListener("click", () => {
+  selectedThickness = 2;
+  thinButton.classList.add("selectedTool");
+  thickButton.classList.remove("selectedTool");
+});
+
+thickButton.addEventListener("click", () => {
+  selectedThickness = 6;
+  thickButton.classList.add("selectedTool");
+  thinButton.classList.remove("selectedTool");
+});
 
 clrButton.addEventListener("click", () => {
   commands.splice(0, commands.length);
@@ -71,7 +95,7 @@ redoButton.addEventListener("click", () => {
 });
 
 myCanvas.addEventListener("mousedown", (e) => {
-  currentCommand = new MarkerLine(e.offsetX, e.offsetY);
+  currentCommand = new MarkerLine(e.offsetX, e.offsetY, selectedThickness);
   commands.push(currentCommand);
   redoStack.splice(0, redoStack.length); //clear redo stack on new stroke
   dispatchDrawingChanged();
@@ -102,7 +126,6 @@ myCanvas.addEventListener("drawing-changed", () => {
 function redrawCanvas() {
   ctx.clearRect(0, 0, myCanvas.width, myCanvas.height);
   ctx.strokeStyle = "black";
-  ctx.lineWidth = 1;
 
   for (const command of commands) {
     command.execute(ctx);
