@@ -204,7 +204,6 @@ myCanvas.addEventListener("mousedown", (e) => {
     currentCommand = new Sticker(e.offsetX, e.offsetY, selectedSticker);
   } else {
     currentCommand = new MarkerLine(e.offsetX, e.offsetY, selectedThickness);
-
   }
   commands.push(currentCommand);
   redoStack.splice(0, redoStack.length); //clear redo stack on new stroke
