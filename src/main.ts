@@ -56,11 +56,30 @@ class MarkerLine implements DrawableCommand {
     }
   }
 }
+class ToolPreview implements Command {
+  private x: number;
+  private y: number;
+  private thickness: number;
+
+  constructor(x: number, y: number, thickness: number) {
+    this.x = x;
+    this.y = y;
+    this.thickness = thickness;
+  }
+
+  execute(ctx: CanvasRenderingContext2D): void {
+    ctx.strokeStyle = "gray";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.thickness / 2, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+}
 
 const commands: Command[] = [];
 const redoStack: Command[] = [];
 let currentCommand: DrawableCommand | null = null;
-
+let toolPreview: Command | null = null;
 let selectedThickness = 2;
 
 thinButton.addEventListener("click", () => {
@@ -98,6 +117,7 @@ myCanvas.addEventListener("mousedown", (e) => {
   currentCommand = new MarkerLine(e.offsetX, e.offsetY, selectedThickness);
   commands.push(currentCommand);
   redoStack.splice(0, redoStack.length); //clear redo stack on new stroke
+  toolPreview = null;
   dispatchDrawingChanged();
 });
 
@@ -105,11 +125,24 @@ myCanvas.addEventListener("mousemove", (e) => {
   if (currentCommand) {
     currentCommand.drag(e.offsetX, e.offsetY);
     dispatchDrawingChanged();
+  } else {
+    toolPreview = new ToolPreview(e.offsetX, e.offsetY, selectedThickness);
+    dispatchToolMoved();
   }
 });
 
 myCanvas.addEventListener("mouseup", () => {
   currentCommand = null;
+});
+
+myCanvas.addEventListener("mouseenter", (e) => {
+  toolPreview = new ToolPreview(e.offsetX, e.offsetY, selectedThickness);
+  dispatchToolMoved();
+});
+
+myCanvas.addEventListener("mouseleave", () => {
+  toolPreview = null;
+  dispatchToolMoved();
 });
 
 // Custom event dispatch
@@ -118,8 +151,17 @@ function dispatchDrawingChanged() {
   myCanvas.dispatchEvent(event);
 }
 
+function dispatchToolMoved() {
+  const event = new CustomEvent("tool-moved");
+  myCanvas.dispatchEvent(event);
+}
+
 // Observer for drawing changes
 myCanvas.addEventListener("drawing-changed", () => {
+  redrawCanvas();
+});
+
+myCanvas.addEventListener("tool-moved", () => {
   redrawCanvas();
 });
 
@@ -129,5 +171,9 @@ function redrawCanvas() {
 
   for (const command of commands) {
     command.execute(ctx);
+  }
+
+  if (toolPreview) {
+    toolPreview.execute(ctx);
   }
 }
