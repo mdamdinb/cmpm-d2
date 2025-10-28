@@ -8,6 +8,11 @@ document.body.innerHTML = `
     <button id="thickButton">Thick Marker</button>
   </div>
   <div>
+    <button id = "sticker1">🙈</button>
+    <button id="sticker2">🙉</button>
+    <button id="sticker3">🙊</button>
+  </div>
+  <div>
     <button id = "clrButton">clear</button>
     <button id="undoButton">undo</button>
     <button id="redoButton">redo</button>
@@ -17,6 +22,9 @@ document.body.innerHTML = `
 const myCanvas = document.getElementById("myCanvas") as HTMLCanvasElement;
 const ctx = myCanvas.getContext("2d")!;
 const thinButton = document.getElementById("thinButton") as HTMLButtonElement;
+const sticker1Button = document.getElementById("sticker1") as HTMLButtonElement;
+const sticker2Button = document.getElementById("sticker2") as HTMLButtonElement;
+const sticker3Button = document.getElementById("sticker3") as HTMLButtonElement;
 const thickButton = document.getElementById("thickButton") as HTMLButtonElement;
 const clrButton = document.getElementById("clrButton") as HTMLButtonElement;
 const undoButton = document.getElementById("undoButton") as HTMLButtonElement;
@@ -76,22 +84,100 @@ class ToolPreview implements Command {
   }
 }
 
+class Sticker implements DrawableCommand {
+  private x: number;
+  private y: number;
+  private emoji: string;
+
+  constructor(x: number, y: number, emoji: string) {
+    this.x = x;
+    this.y = y;
+    this.emoji = emoji;
+  }
+
+  drag(x: number, y: number): void {
+    this.x = x;
+    this.y = y;
+  }
+
+  execute(ctx: CanvasRenderingContext2D): void {
+    ctx.font = "32px serif";
+    ctx.fillText(this.emoji, this.x - 16, this.y + 16);
+  }
+}
+
+class StickerPreview implements Command {
+  private x: number;
+  private y: number;
+  private emoji: string;
+
+  constructor(x: number, y: number, emoji: string) {
+    this.x = x;
+    this.y = y;
+    this.emoji = emoji;
+  }
+
+  execute(ctx: CanvasRenderingContext2D): void {
+    ctx.globalAlpha = 0.5;
+    ctx.font = "32px serif";
+    ctx.fillText(this.emoji, this.x - 16, this.y + 16);
+    ctx.globalAlpha = 1.0;
+  }
+}
+
 const commands: Command[] = [];
 const redoStack: Command[] = [];
 let currentCommand: DrawableCommand | null = null;
 let toolPreview: Command | null = null;
 let selectedThickness = 2;
+let selectedSticker: string | null = null;
 
 thinButton.addEventListener("click", () => {
   selectedThickness = 2;
   thinButton.classList.add("selectedTool");
   thickButton.classList.remove("selectedTool");
+  sticker1Button.classList.remove("selectedTool");
+  sticker2Button.classList.remove("selectedTool");
+  sticker3Button.classList.remove("selectedTool");
 });
 
 thickButton.addEventListener("click", () => {
   selectedThickness = 6;
   thickButton.classList.add("selectedTool");
   thinButton.classList.remove("selectedTool");
+  sticker1Button.classList.remove("selectedTool");
+  sticker2Button.classList.remove("selectedTool");
+  sticker3Button.classList.remove("selectedTool");
+});
+
+sticker1Button.addEventListener("click", () => {
+  selectedSticker = "🙈";
+  sticker1Button.classList.add("selectedTool");
+  sticker2Button.classList.remove("selectedTool");
+  sticker3Button.classList.remove("selectedTool");
+  thinButton.classList.remove("selectedTool");
+  thickButton.classList.remove("selectedTool");
+  dispatchToolMoved();
+});
+
+sticker2Button.addEventListener("click", () => {
+  selectedSticker = "🙉";
+  sticker2Button.classList.add("selectedTool");
+  sticker1Button.classList.remove("selectedTool");
+  sticker3Button.classList.remove("selectedTool");
+  thinButton.classList.remove("selectedTool");
+  thickButton.classList.remove("selectedTool");
+  dispatchToolMoved();
+});
+
+sticker3Button.addEventListener("click", () => {
+  selectedSticker = "🙊";
+  sticker3Button.classList.add("selectedTool");
+  sticker2Button.classList.remove("selectedTool");
+  sticker1Button.classList.remove("selectedTool");
+  thinButton.classList.remove("selectedTool");
+  thickButton.classList.remove("selectedTool");
+  dispatchToolMoved();
 });
 
 clrButton.addEventListener("click", () => {
@@ -114,7 +200,12 @@ redoButton.addEventListener("click", () => {
 });
 
 myCanvas.addEventListener("mousedown", (e) => {
-  currentCommand = new MarkerLine(e.offsetX, e.offsetY, selectedThickness);
+  if (selectedSticker) {
+    currentCommand = new Sticker(e.offsetX, e.offsetY, selectedSticker);
+  } else {
+    currentCommand = new MarkerLine(e.offsetX, e.offsetY, selectedThickness);
+
+  }
   commands.push(currentCommand);
   redoStack.splice(0, redoStack.length); //clear redo stack on new stroke
   toolPreview = null;
@@ -126,7 +217,11 @@ myCanvas.addEventListener("mousemove", (e) => {
     currentCommand.drag(e.offsetX, e.offsetY);
     dispatchDrawingChanged();
   } else {
-    toolPreview = new ToolPreview(e.offsetX, e.offsetY, selectedThickness);
+    if (selectedSticker) {
+      toolPreview = new StickerPreview(e.offsetX, e.offsetY, selectedSticker);
+    } else {
+      toolPreview = new ToolPreview(e.offsetX, e.offsetY, selectedThickness);
+    }
     dispatchToolMoved();
   }
 });
@@ -136,7 +231,11 @@ myCanvas.addEventListener("mouseup", () => {
 });
 
 myCanvas.addEventListener("mouseenter", (e) => {
-  toolPreview = new ToolPreview(e.offsetX, e.offsetY, selectedThickness);
+  if (selectedSticker) {
+    toolPreview = new StickerPreview(e.offsetX, e.offsetY, selectedSticker);
+  } else {
+    toolPreview = new ToolPreview(e.offsetX, e.offsetY, selectedThickness);
+  }
   dispatchToolMoved();
 });
 
