@@ -50,10 +50,12 @@ interface DrawableCommand extends Command {
 class MarkerLine implements DrawableCommand {
   private points: { x: number; y: number }[];
   private thickness: number;
+  private color: string;
 
-  constructor(x: number, y: number, thickness: number) {
+  constructor(x: number, y: number, thickness: number, color: string) {
     this.points = [{ x, y }];
     this.thickness = thickness;
+    this.color = color;
   }
 
   drag(x: number, y: number): void {
@@ -62,6 +64,7 @@ class MarkerLine implements DrawableCommand {
 
   execute(ctx: CanvasRenderingContext2D): void {
     if (this.points.length > 1) {
+      ctx.strokeStyle = this.color;
       ctx.lineWidth = this.thickness;
       ctx.beginPath();
       const { x, y } = this.points[0]!;
@@ -73,19 +76,22 @@ class MarkerLine implements DrawableCommand {
     }
   }
 }
+
 class ToolPreview implements Command {
   private x: number;
   private y: number;
   private thickness: number;
+  private color: string;
 
-  constructor(x: number, y: number, thickness: number) {
+  constructor(x: number, y: number, thickness: number, color: string) {
     this.x = x;
     this.y = y;
     this.thickness = thickness;
+    this.color = color;
   }
 
   execute(ctx: CanvasRenderingContext2D): void {
-    ctx.strokeStyle = "gray";
+    ctx.strokeStyle = this.color;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.thickness / 2, 0, Math.PI * 2);
@@ -110,7 +116,7 @@ class Sticker implements DrawableCommand {
   }
 
   execute(ctx: CanvasRenderingContext2D): void {
-    ctx.font = "32px serif";
+    ctx.font = "40px serif";
     ctx.fillText(this.emoji, this.x - 16, this.y + 16);
   }
 }
@@ -140,8 +146,14 @@ let currentCommand: DrawableCommand | null = null;
 let toolPreview: Command | null = null;
 let selectedThickness = 2;
 let selectedSticker: string | null = null;
+let currentColor = "black";
 
 const stickers: string[] = ["🐻", "🐼", "🐻‍❄️"];
+
+function getRandomColor(): string {
+  const hue = Math.floor(Math.random() * 360);
+  return `hsl(${hue}, 70%, 50%)`;
+}
 
 function createStickerButton(emoji: string): HTMLButtonElement {
   const button = document.createElement("button");
@@ -175,19 +187,23 @@ initializeStickerButtons();
 thinButton.addEventListener("click", () => {
   selectedThickness = 1;
   selectedSticker = null;
+  currentColor = getRandomColor();
   thinButton.classList.add("selectedTool");
   thickButton.classList.remove("selectedTool");
   const allStickerButtons = stickerContainer.querySelectorAll("button");
   allStickerButtons.forEach((btn) => btn.classList.remove("selectedTool"));
+  dispatchToolMoved();
 });
 
 thickButton.addEventListener("click", () => {
   selectedThickness = 8;
   selectedSticker = null;
+  currentColor = getRandomColor();
   thickButton.classList.add("selectedTool");
   thinButton.classList.remove("selectedTool");
   const allStickerButtons = stickerContainer.querySelectorAll("button");
   allStickerButtons.forEach((btn) => btn.classList.remove("selectedTool"));
+  dispatchToolMoved();
 });
 
 customStickerButton.addEventListener("click", () => {
@@ -243,7 +259,12 @@ myCanvas.addEventListener("mousedown", (e) => {
   if (selectedSticker) {
     currentCommand = new Sticker(e.offsetX, e.offsetY, selectedSticker);
   } else {
-    currentCommand = new MarkerLine(e.offsetX, e.offsetY, selectedThickness);
+    currentCommand = new MarkerLine(
+      e.offsetX,
+      e.offsetY,
+      selectedThickness,
+      currentColor,
+    );
   }
   commands.push(currentCommand);
   redoStack.splice(0, redoStack.length); //clear redo stack on new stroke
@@ -259,7 +280,12 @@ myCanvas.addEventListener("mousemove", (e) => {
     if (selectedSticker) {
       toolPreview = new StickerPreview(e.offsetX, e.offsetY, selectedSticker);
     } else {
-      toolPreview = new ToolPreview(e.offsetX, e.offsetY, selectedThickness);
+      toolPreview = new ToolPreview(
+        e.offsetX,
+        e.offsetY,
+        selectedThickness,
+        currentColor,
+      );
     }
     dispatchToolMoved();
   }
@@ -273,7 +299,12 @@ myCanvas.addEventListener("mouseenter", (e) => {
   if (selectedSticker) {
     toolPreview = new StickerPreview(e.offsetX, e.offsetY, selectedSticker);
   } else {
-    toolPreview = new ToolPreview(e.offsetX, e.offsetY, selectedThickness);
+    toolPreview = new ToolPreview(
+      e.offsetX,
+      e.offsetY,
+      selectedThickness,
+      currentColor,
+    );
   }
   dispatchToolMoved();
 });
