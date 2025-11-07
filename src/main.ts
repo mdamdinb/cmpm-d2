@@ -17,6 +17,9 @@ document.body.innerHTML = `
     <button id="undoButton">undo</button>
     <button id="redoButton">redo</button>
   </div>
+  <div>
+    <button id="exportButton">export</button>
+  </div>
 `;
 
 const myCanvas = document.getElementById("myCanvas") as HTMLCanvasElement;
@@ -31,6 +34,9 @@ const customStickerButton = document.getElementById(
 ) as HTMLButtonElement;
 const stickerContainer = document.getElementById(
   "stickerContainer",
+) as HTMLButtonElement;
+const exportButton = document.getElementById(
+  "exportButton",
 ) as HTMLButtonElement;
 
 interface Command {
@@ -148,7 +154,7 @@ function createStickerButton(emoji: string): HTMLButtonElement {
 
 function selectSticker(emoji: string, button: HTMLButtonElement) {
   selectedSticker = emoji;
-  thinButton.classList.add("selectedTool");
+  thinButton.classList.remove("selectedTool");
   thickButton.classList.remove("selectedTool");
   const allStickerButtons = stickerContainer.querySelectorAll("button");
   allStickerButtons.forEach((btn) => btn.classList.remove("selectedTool"));
@@ -168,6 +174,7 @@ initializeStickerButtons();
 
 thinButton.addEventListener("click", () => {
   selectedThickness = 2;
+  selectedSticker = null;
   thinButton.classList.add("selectedTool");
   thickButton.classList.remove("selectedTool");
   const allStickerButtons = stickerContainer.querySelectorAll("button");
@@ -176,6 +183,7 @@ thinButton.addEventListener("click", () => {
 
 thickButton.addEventListener("click", () => {
   selectedThickness = 6;
+  selectedSticker = null;
   thickButton.classList.add("selectedTool");
   thinButton.classList.remove("selectedTool");
   const allStickerButtons = stickerContainer.querySelectorAll("button");
@@ -209,6 +217,26 @@ redoButton.addEventListener("click", () => {
     commands.push(redoStack.pop()!);
     dispatchDrawingChanged();
   }
+});
+
+exportButton.addEventListener("click", () => {
+  const exportCanvas = document.createElement("canvas");
+  exportCanvas.width = 1024;
+  exportCanvas.height = 1024;
+  const exportCtx = exportCanvas.getContext("2d")!;
+
+  exportCtx.scale(4, 4);
+
+  exportCtx.strokeStyle = "black";
+
+  for (const command of commands) {
+    command.execute(exportCtx);
+  }
+
+  const anchor = document.createElement("a");
+  anchor.href = exportCanvas.toDataURL("image/png");
+  anchor.download = "sketchpad.png";
+  anchor.click();
 });
 
 myCanvas.addEventListener("mousedown", (e) => {
