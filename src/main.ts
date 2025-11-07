@@ -7,13 +7,13 @@ document.body.innerHTML = `
     <button id="thinButton" class="selectedTool">Thin Marker</button>
     <button id="thickButton">Thick Marker</button>
   </div>
-  <div>
-    <button id = "sticker1">🙈</button>
-    <button id="sticker2">🙉</button>
-    <button id="sticker3">🙊</button>
+  <div id="stickerContainer">
   </div>
   <div>
-    <button id = "clrButton">clear</button>
+    <button id="customStickerButton">Custom Sticker</button>
+  </div>
+  <div> 
+    <button id= "clrButton">clear</button>
     <button id="undoButton">undo</button>
     <button id="redoButton">redo</button>
   </div>
@@ -22,13 +22,16 @@ document.body.innerHTML = `
 const myCanvas = document.getElementById("myCanvas") as HTMLCanvasElement;
 const ctx = myCanvas.getContext("2d")!;
 const thinButton = document.getElementById("thinButton") as HTMLButtonElement;
-const sticker1Button = document.getElementById("sticker1") as HTMLButtonElement;
-const sticker2Button = document.getElementById("sticker2") as HTMLButtonElement;
-const sticker3Button = document.getElementById("sticker3") as HTMLButtonElement;
 const thickButton = document.getElementById("thickButton") as HTMLButtonElement;
 const clrButton = document.getElementById("clrButton") as HTMLButtonElement;
 const undoButton = document.getElementById("undoButton") as HTMLButtonElement;
 const redoButton = document.getElementById("redoButton") as HTMLButtonElement;
+const customStickerButton = document.getElementById(
+  "customStickerButton",
+) as HTMLButtonElement;
+const stickerContainer = document.getElementById(
+  "stickerContainer",
+) as HTMLButtonElement;
 
 interface Command {
   execute(ctx: CanvasRenderingContext2D): void;
@@ -132,52 +135,61 @@ let toolPreview: Command | null = null;
 let selectedThickness = 2;
 let selectedSticker: string | null = null;
 
+const stickers: string[] = ["🙈", "🙉", "🙊"];
+
+function createStickerButton(emoji: string): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.textContent = emoji;
+  button.addEventListener("click", () => {
+    selectSticker(emoji, button);
+  });
+  return button;
+}
+
+function selectSticker(emoji: string, button: HTMLButtonElement) {
+  selectedSticker = emoji;
+  thinButton.classList.add("selectedTool");
+  thickButton.classList.remove("selectedTool");
+  const allStickerButtons = stickerContainer.querySelectorAll("button");
+  allStickerButtons.forEach((btn) => btn.classList.remove("selectedTool"));
+  button.classList.add("selectedTool");
+  dispatchToolMoved();
+}
+
+function initializeStickerButtons() {
+  stickerContainer.innerHTML = "";
+  stickers.forEach((emoji) => {
+    const button = createStickerButton(emoji);
+    stickerContainer.appendChild(button);
+  });
+}
+
+initializeStickerButtons();
+
 thinButton.addEventListener("click", () => {
   selectedThickness = 2;
   thinButton.classList.add("selectedTool");
   thickButton.classList.remove("selectedTool");
-  sticker1Button.classList.remove("selectedTool");
-  sticker2Button.classList.remove("selectedTool");
-  sticker3Button.classList.remove("selectedTool");
+  const allStickerButtons = stickerContainer.querySelectorAll("button");
+  allStickerButtons.forEach((btn) => btn.classList.remove("selectedTool"));
 });
 
 thickButton.addEventListener("click", () => {
   selectedThickness = 6;
   thickButton.classList.add("selectedTool");
   thinButton.classList.remove("selectedTool");
-  sticker1Button.classList.remove("selectedTool");
-  sticker2Button.classList.remove("selectedTool");
-  sticker3Button.classList.remove("selectedTool");
+  const allStickerButtons = stickerContainer.querySelectorAll("button");
+  allStickerButtons.forEach((btn) => btn.classList.remove("selectedTool"));
 });
 
-sticker1Button.addEventListener("click", () => {
-  selectedSticker = "🙈";
-  sticker1Button.classList.add("selectedTool");
-  sticker2Button.classList.remove("selectedTool");
-  sticker3Button.classList.remove("selectedTool");
-  thinButton.classList.remove("selectedTool");
-  thickButton.classList.remove("selectedTool");
-  dispatchToolMoved();
-});
-
-sticker2Button.addEventListener("click", () => {
-  selectedSticker = "🙉";
-  sticker2Button.classList.add("selectedTool");
-  sticker1Button.classList.remove("selectedTool");
-  sticker3Button.classList.remove("selectedTool");
-  thinButton.classList.remove("selectedTool");
-  thickButton.classList.remove("selectedTool");
-  dispatchToolMoved();
-});
-
-sticker3Button.addEventListener("click", () => {
-  selectedSticker = "🙊";
-  sticker3Button.classList.add("selectedTool");
-  sticker2Button.classList.remove("selectedTool");
-  sticker1Button.classList.remove("selectedTool");
-  thinButton.classList.remove("selectedTool");
-  thickButton.classList.remove("selectedTool");
-  dispatchToolMoved();
+customStickerButton.addEventListener("click", () => {
+  const customEmoji = prompt("Enter a custom sticker (emoji or text):", "😀");
+  if (customEmoji && customEmoji.trim() !== "") {
+    stickers.push(customEmoji);
+    const button = createStickerButton(customEmoji);
+    stickerContainer.appendChild(button);
+    selectSticker(customEmoji, button);
+  }
 });
 
 clrButton.addEventListener("click", () => {
