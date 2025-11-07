@@ -2,7 +2,7 @@ import "./style.css";
 
 document.body.innerHTML = `
   <h1>D2 Assignment</h1>
-  <canvas id="myCanvas" width="256" height="256"></canvas>
+  <canvas id="myCanvas" width="512" height="512"></canvas>
   <div>
     <button id="thinButton" class="selectedTool">Thin Marker</button>
     <button id="thickButton">Thick Marker</button>
@@ -128,7 +128,7 @@ class StickerPreview implements Command {
 
   execute(ctx: CanvasRenderingContext2D): void {
     ctx.globalAlpha = 0.5;
-    ctx.font = "32px serif";
+    ctx.font = "40px serif";
     ctx.fillText(this.emoji, this.x - 16, this.y + 16);
     ctx.globalAlpha = 1.0;
   }
@@ -141,7 +141,7 @@ let toolPreview: Command | null = null;
 let selectedThickness = 2;
 let selectedSticker: string | null = null;
 
-const stickers: string[] = ["🙈", "🙉", "🙊"];
+const stickers: string[] = ["🐻", "🐼", "🐻‍❄️"];
 
 function createStickerButton(emoji: string): HTMLButtonElement {
   const button = document.createElement("button");
@@ -173,7 +173,7 @@ function initializeStickerButtons() {
 initializeStickerButtons();
 
 thinButton.addEventListener("click", () => {
-  selectedThickness = 2;
+  selectedThickness = 1;
   selectedSticker = null;
   thinButton.classList.add("selectedTool");
   thickButton.classList.remove("selectedTool");
@@ -182,7 +182,7 @@ thinButton.addEventListener("click", () => {
 });
 
 thickButton.addEventListener("click", () => {
-  selectedThickness = 6;
+  selectedThickness = 8;
   selectedSticker = null;
   thickButton.classList.add("selectedTool");
   thinButton.classList.remove("selectedTool");
@@ -225,7 +225,7 @@ exportButton.addEventListener("click", () => {
   exportCanvas.height = 1024;
   const exportCtx = exportCanvas.getContext("2d")!;
 
-  exportCtx.scale(4, 4);
+  exportCtx.scale(2, 2);
 
   exportCtx.strokeStyle = "black";
 
